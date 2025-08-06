@@ -1,0 +1,214 @@
+{
+  "name": "Qualified Lead Classifier AND Notifier",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "c733198d-d9d2-4a51-97a8-6b7737f1e0d4",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -896,
+        -320
+      ],
+      "id": "e26d15db-740f-4faa-add2-45d42f7eed0f",
+      "name": "Webhook",
+      "webhookId": "c733198d-d9d2-4a51-97a8-6b7737f1e0d4"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={\n  \"Name\": \"{{ $json.body.name }}\",\n  \"email\": \"{{ $json.body.email }}\",\n  \"company info\": \"{{ $json.body[\"company info\"] }}\",\n\"message\":\"{{ $json.body.message }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -736,
+        -320
+      ],
+      "id": "addab76e-088b-49e0-ae81-295111646f83",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash-lite-preview-06-17",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash-lite-preview-06-17"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=We have a new inbound lead and we need you to classify it into either SaaS or development agency category.\n\nHere is the lead information:\nName: {{ $json['Name'] }}\nRequest: {{ $json.message }}\nCompany Information: \n{{ $json['company info'] }}\n\nIf the lead a SaaS company, output 'SaaS'\nIf the lead is a development agency, output 'Agency"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        -576,
+        -320
+      ],
+      "id": "08f5dbad-c87f-4e4f-a412-25d8b93c562f",
+      "name": "Message a model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "82fkuo1Qed5OC1iD",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "53ff21b7-321a-4dbe-99e8-c9a4e690b83e",
+              "leftValue": "={{ $json.content.parts[0].text.toLowerCase() }}",
+              "rightValue": "agency",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -240,
+        -320
+      ],
+      "id": "0885959f-fdbc-4a03-a60d-afbcb472e7b0",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "sendTo": "fatemamemon2895@gmail.com",
+        "subject": "New AGENCY Lead",
+        "emailType": "text",
+        "message": "=NEW AGENCY LEAD MAN ! GO GETTEM: {{ $('Edit Fields').item.json[\"company info\"] }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -32,
+        -384
+      ],
+      "id": "f9d17e0e-0865-4637-9193-6919f736f39a",
+      "name": "AGENCY LEAD",
+      "webhookId": "46708a7c-7324-4d75-85b1-9222df6108bd",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "UyVqrSNbY03hGiyg",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "fatemamemon2895@gmail.com",
+        "subject": "New SAAS Lead",
+        "emailType": "text",
+        "message": "=NEW SAAS LEAD MAN ! GO GETTEM: {{ $('Edit Fields').item.json[\"company info\"] }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -16,
+        -176
+      ],
+      "id": "9590e943-35b8-4489-ab5b-1976cf3508de",
+      "name": "SaaS LEAD",
+      "webhookId": "46708a7c-7324-4d75-85b1-9222df6108bd",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "UyVqrSNbY03hGiyg",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "AGENCY LEAD",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SaaS LEAD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "ee7940d9-0f41-4074-b826-b9882483dd46",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f0d5a3908f3fa266c5254cdd45100c22e4fe245da1d5d43df8d8ee18d210d4d3"
+  },
+  "id": "w5X452w2aJffQPUt",
+  "tags": []
+}
